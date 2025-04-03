@@ -46,8 +46,8 @@ class TizBlokk_problema(Feladat):
 if __name__ == "__main__":
     problem = TizBlokk_problema()
 
-    #csúcs = szélességi_gráfkereső(problem)
-    csúcs = mélységi_fakereső(problem)
+    csúcs = szélességi_gráfkereső(problem)
+    #csúcs = mélységi_fakereső(problem)
 
     út = csúcs.út(); út.reverse()
     lépések = csúcs.megoldás()
