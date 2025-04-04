@@ -1,0 +1,39 @@
+A = { (M, p, l) | M ∈ {0,1}^(N×N), p ∈ {1, 2, ..., N^2-4}, l ∈ {1, 2, ..., N}×{1, 2, ..., N} }
+where M is an N×N matrix whose elements M_{i,j} show if position (i,j) has been visited
+p is the move number (from 1 to N^2-4), and l = (i,j) is the knight's current position.
+Note: The corners (1,1), (1,N), (N,1), and (N,N) are always considered visited/removed.
+M_{i,j} = {
+  1, if position (i,j) has been visited,
+  0, otherwise
+}
+
+k = (M_0, 1, (1,2))
+ahol:
+M_0_{i,j} =
+  1, if (i,j) ∈ {(1,1), (1,N), (N,1), (N,N), (1,2)},
+  0, otherwise.
+
+C = {(M, p, (i,j)) ∈ A | p = N²-4 ∧ ((|i-1| = 2 ∧ |j-2| = 1) ∨ (|i-1| = 1 ∧ |j-2| = 2))}
+ahol:
+p = N²-4 means all non-corner squares have been visited
+the second expression (after the frist ∧)  = is the set of positions from which the starting position (1,2) is reachable by a knight's move
+
+O = {move(i',j') | 1 ≤ i' ≤ N, 1 ≤ j' ≤ N, (i',j') ∉ {(1,1), (1,N), (N,1), (N,N)}}
+operator alkalmazi elofeltelek:
+{
+  ((|i'-i| = 2 ∧ |j'-j| = 1) ∨ (|i'-i| = 1 ∧ |j'-j| = 2)) ∧
+  M_{i',j'} = 0
+}
+
+alkalmazasi fuggveny:
+γ(move(i',j'), (M, p, (i,j))) = (M', p+1, (i',j'))
+M'_{r,s} = {
+  1,         if (r,s) = (i',j'),
+  M_{r,s},   otherwise
+}
+
+
+
+
+
+
