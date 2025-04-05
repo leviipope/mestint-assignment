@@ -53,10 +53,8 @@ if __name__ == "__main__":
     lépések = csúcs.megoldás()
     print(f"Lépések száma: {len(lépések)}")
 
-    # Az állapotok és a hozzájuk tartozó operátorok együttes kiírása
-    # Az első állapot a kezdeti állapot, amihez nincs művelet
+    # nincs muvelet az kezdo allapothoz
     print(f"1. {út[0]} (kezdő állapot)")
 
-    # A többi állapothoz hozzárendeljük a megfelelő műveletet
     for i in range(1, len(út)):
         print(f"{i + 1}. {út[i]} (művelet: {lépések[i - 1]})")
