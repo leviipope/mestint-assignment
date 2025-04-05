@@ -4,7 +4,6 @@ class Sakktabla_domino(Feladat):
     def __init__(self):
         tabla = tuple(tuple(0 for _ in range(8)) for _ in range(8))
         self.kezdő = (tabla, 0)
-        self.cél = None  # inkabb felbontjuk a céltesztben
 
     def célteszt(self, allapot):
         B, d = allapot
@@ -18,24 +17,24 @@ class Sakktabla_domino(Feladat):
         # tuple-k tuple-je -> list-k list-je
         B_list = [list(row) for row in B]
 
-        # horizontalis lerakás
+        # vizszintes lerakas
         for i in range(8):
-            for j in range(6):  #  csak j = 5 -ig tud menni
-                # 3 egymas melletti mező szabad e
-                if B[i][j] == 0 and B[i][j + 1] == 0 and B[i][j + 2] == 0:
+            for j in range(6):  #  csak j= 5 -ig tud menni
+                # 3 egymas melletti mezo szabad e
+                if B[i][j] == 0 and B[i][j + 1] == 0 and B[i][j+ 2] == 0:
                     uj_B_list = [row.copy() for row in B_list]
-                    uj_B_list[i][j] = uj_B_list[i][j + 1] = uj_B_list[i][j + 2] = 1 # lerakás
+                    uj_B_list[i][j] = uj_B_list[i][j + 1] = uj_B_list[i][j+ 2] = 1 # lerakas
                     uj_B = tuple(tuple(row) for row in uj_B_list)
                     uj_d = d + 1
                     gyerekek.append((f"lerak_vizszintes({i + 1}, {j + 1})", (uj_B, uj_d)))
 
-        # vertikalis lerakás
+        # fuggoleges lerakas
         for i in range(6):  # csak i=5-ig
             for j in range(8):
-                # 3 egymas alatt lévő mező szabad e
+                # 3 egymas alatti mezo szabad e
                 if B[i][j] == 0 and B[i + 1][j] == 0 and B[i + 2][j] == 0:
-                    uj_B_list = [row.copy() for row in B_list]
-                    uj_B_list[i][j] = uj_B_list[i + 1][j] = uj_B_list[i + 2][j] = 1 # lerakás
+                    uj_B_list =[row.copy() for row in B_list]
+                    uj_B_list[i][j] =uj_B_list[i + 1][j] = uj_B_list[i + 2][j] = 1 # lerakas
                     uj_B = tuple(tuple(row) for row in uj_B_list)
                     uj_d = d + 1
                     gyerekek.append((f"lerak_fuggoleges({i + 1}, {j + 1})", (uj_B, uj_d)))

@@ -2,10 +2,8 @@ from keres import *
 
 class TizBlokk_problema(Feladat):
     def __init__(self):
-        ke = ('zöld', 'zöld', 'zöld', 'üres', 'üres', 'üres', 'üres', 'piros', 'piros', 'piros')
-        c = ('piros', 'piros', 'piros', 'üres', 'üres', 'üres', 'üres', 'zöld', 'zöld', 'zöld')
-
-        super().__init__(ke, c)
+        self.kezdő = ('zöld', 'zöld', 'zöld', 'üres', 'üres', 'üres', 'üres', 'piros', 'piros', 'piros')
+        self.cél = ('piros', 'piros', 'piros', 'üres', 'üres', 'üres', 'üres', 'zöld', 'zöld', 'zöld')
 
         # Szomszédossági fgv
         self.szomszéd = {
@@ -30,11 +28,8 @@ class TizBlokk_problema(Feladat):
         # Színes elemek megkeresése
         for i in range(10):
             if állapot[i] in ['zöld', 'piros']:
-                # Szomszédos pozíciók ellenőrzése
-                for j in self.szomszéd[i]:
-                    # Ha a szomszédos pozíció üres
-                    if állapot[j] == 'üres':
-                        # Új állapot létrehozása az elem mozgatásával
+                for j in self.szomszéd[i]: # Szomszedos pozíciók ellenőrzése
+                    if állapot[j] == 'üres': # Ha a szomszédos pozíció üres
                         új_állapot = list(állapot)
                         új_állapot[j] = állapot[i]
                         új_állapot[i] = 'üres'
