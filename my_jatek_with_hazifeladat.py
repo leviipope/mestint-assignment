@@ -188,6 +188,79 @@ class Jatek:
         """Játék nevének kiírása."""
         return '<%s>' % self.__class__.__name__
 
+# TIC-TAC TOE OSZTALY
+class TicTacToe(Jatek):
+    """Általánosított 3x3-as amőba."""
+
+    def __init__(self, h=3, v=3, k=3):
+        """Játék alapstrukturájának kialakítása."""
+        update(self, h=h, v=v, k=k)
+        lepesek = [(x, y) for x in range(1, h+1) for y in range(1, v+1)]
+        self.kezdo = Struct(
+            kovetkezik='X', eredmeny=0, tabla={}, lepesek=lepesek)
+
+    def legalis_lepesek(self, allapot):
+        """Minden üres mező lehetséges lépést jelent."""
+        return allapot.lepesek
+
+    def lep(self, lepes, allapot):
+        """Lépés hatása."""
+        if type(lepes) is str:
+            lepes = make_tuple(lepes)
+        if lepes not in allapot.lepesek:
+            return allapot  # téves lépés volt
+        tabla = allapot.tabla.copy()
+        tabla[lepes] = allapot.kovetkezik
+        lepesek = list(allapot.lepesek)
+        lepesek.remove(lepes)
+        return Struct(
+            kovetkezik=if_(allapot.kovetkezik == 'X', 'O', 'X'),
+            eredmeny=self.ertekel(tabla, lepes, allapot.kovetkezik),
+            tabla=tabla, lepesek=lepesek)
+
+    def hasznossag(self, allapot, jatekos):
+        """X értékelése: 1, ha nyer; -1, ha veszít, 0 döntetlenért."""
+        return if_(jatekos == "X", allapot.eredmeny, -allapot.eredmeny)
+
+    def levele(self, allapot):
+        """A nyert állás vagy a tele tábla a játék végét jelenti."""
+        return allapot.eredmeny != 0 or len(allapot.lepesek) == 0
+
+    def kiir(self, allapot):
+        """Lássuk az aktuális állást."""
+        tabla = allapot.tabla
+        for x in range(1, self.h+1):
+            for y in range(1, self.v+1):
+                print(tabla.get((x, y), '.'), end=" ")
+            print()
+        print(allapot.eredmeny)
+        print()
+
+    def ertekel(self, tabla, lepes, jatekos):
+        """Ha X nyer ezzel a lépéssel, akkor 1, ha O, akkor -1, különben 0."""
+        if (self.k_egy_sorban(tabla, lepes, jatekos, (0, 1)) or
+                self.k_egy_sorban(tabla, lepes, jatekos, (1, 0)) or
+                self.k_egy_sorban(tabla, lepes, jatekos, (1, -1)) or
+                self.k_egy_sorban(tabla, lepes, jatekos, (1, 1))):
+            return if_(jatekos == 'X', +1, -1)
+        else:
+            return 0
+
+    def k_egy_sorban(self, tabla, lepes, jatekos, irany):
+        """Igaz, ha van a lépéstől adott irányba k azonos figura."""
+        delta_x, delta_y = irany
+        x, y = lepes
+        n = 0
+        while tabla.get((x, y)) == jatekos:
+            n += 1
+            x, y = x + delta_x, y + delta_y
+        x, y = lepes
+        while tabla.get((x, y)) == jatekos:
+            n += 1
+            x, y = x - delta_x, y - delta_y
+        n -= 1   # lépés duplán számolva
+        return n >= self.k
+
 # Feladat 2.2
 class Kavics(Jatek):
     def __init__(self, kezdeti_X, kezdeti_Y):
@@ -356,78 +429,136 @@ class Lovas(Jatek):
             print(f"Győztes: {gyoztes_jatekos}")
         print("-" * 30)
 
-# TIC-TAC TOE OSZTALY
-class TicTacToe(Jatek):
-    """Általánosított 3x3-as amőba."""
+class BalKiralyno(Jatek):
+    """
+    A "Bal Királynő" játék.
+    Egy N × N mezőből álló táblán játszák. A királynő a (1,N) pozícióból indul
+    (1-indexelt, sor=1, oszlop=N, azaz a jobb felső sarok).
+    A játékosok felváltva lépnek. Minden lépésben el kell mozdítani a királynőt
+    legalább egy mezővel. A figura csak balra, lefelé vagy balra lefelé átlósan léphet.
+    Az a játékos nyer, aki a királynővel a tábla bal alsó sarkában lévő (N,1) mezőre lép.
 
-    def __init__(self, h=3, v=3, k=3):
-        """Játék alapstrukturájának kialakítása."""
-        update(self, h=h, v=v, k=k)
-        lepesek = [(x, y) for x in range(1, h+1) for y in range(1, v+1)]
-        self.kezdo = Struct(
-            kovetkezik='X', eredmeny=0, tabla={}, lepesek=lepesek)
+    Megjegyzés: N=1 esetén a játék a kezdőállapotban véget ér (döntetlen).
+    Egyes ágensek (pl. minimax_jatekos, random_jatekos) hibát jelezhetnek,
+    ha terminális kezdőállapottal hívják meg őket. Javasolt N >= 2 használata.
+    """
+
+    def __init__(self, N=8):
+        """
+        Játék inicializálása N x N méretű táblával.
+        Args:
+            N (int): A tábla mérete. Alapértelmezett: 8.
+                     N >= 1 kell legyen.
+        """
+        if not isinstance(N, int) or N < 1:
+            raise ValueError("A tábla méretének (N) pozitív egész számnak kell lennie.")
+
+        self.N = N
+        self.cel_pozicio = (N, 1)  # Bal alsó sarok (sor, oszlop)
+        self.start_pozicio = (1, N) # Jobb felső sarok (sor, oszlop)
+
+        self.kezdo = Struct(kovetkezik='X',
+                              pozicio=self.start_pozicio,
+                              N=self.N,
+                              cel=self.cel_pozicio,
+                              eredmeny=0)  # eredmeny: 1 ha X nyert, -1 ha O nyert, 0 különben
 
     def legalis_lepesek(self, allapot):
-        """Minden üres mező lehetséges lépést jelent."""
-        return allapot.lepesek
+        """Adott állapotban megtehető lépések listája."""
+        lepesek = []
+        r, c = allapot.pozicio
+        N = allapot.N
+
+        # Ha a királynő már a célpozícióban van, nincs több legális lépés.
+        if allapot.pozicio == allapot.cel:
+            return []
+
+        # Balra történő lépések (sor azonos, oszlop csökken)
+        # Legalább egy mezővel kell elmozdulni.
+        for i in range(1, c):  # Az új oszlop c-1, c-2, ..., 1 lehet
+            lepesek.append((r, c - i))
+
+        # Lefelé történő lépések (oszlop azonos, sor növekszik)
+        # Legalább egy mezővel kell elmozdulni.
+        for i in range(1, N - r + 1):  # Az új sor r+1, r+2, ..., N lehet
+            lepesek.append((r + i, c))
+
+        # Balra lefelé átlósan történő lépések (sor növekszik, oszlop csökken)
+        # Legalább egy mezővel kell elmozdulni (k az elmozdulás mértéke).
+        max_atlos_lepes = min(N - r, c - 1) # Max elmozdulás átlósan
+        for k in range(1, max_atlos_lepes + 1):
+            lepesek.append((r + k, c - k))
+        
+        return lepesek
 
     def lep(self, lepes, allapot):
-        """Lépés hatása."""
-        if type(lepes) is str:
-            lepes = make_tuple(lepes)
-        if lepes not in allapot.lepesek:
-            return allapot  # téves lépés volt
-        tabla = allapot.tabla.copy()
-        tabla[lepes] = allapot.kovetkezik
-        lepesek = list(allapot.lepesek)
-        lepesek.remove(lepes)
-        return Struct(
-            kovetkezik=if_(allapot.kovetkezik == 'X', 'O', 'X'),
-            eredmeny=self.ertekel(tabla, lepes, allapot.kovetkezik),
-            tabla=tabla, lepesek=lepesek)
+        """Aktuális állapotban megtett lépés eredménye."""
+        # A 'lepes' itt az új pozíció (uj_sor, uj_oszlop)
+        # A keretrendszer biztosítja, hogy 'lepes' egyike a 'legalis_lepesek' által visszaadottaknak.
+
+        jatekos_aki_lepett = allapot.kovetkezik
+        uj_pozicio = lepes
+        uj_eredmeny = allapot.eredmeny # Alapértelmezetten marad a régi
+
+        if uj_pozicio == allapot.cel:
+            # Az a játékos nyer, aki a célmezőre lép.
+            # Ha X lépett a célba, X nyer (eredmény = 1).
+            # Ha O lépett a célba, O nyer (eredmény = -1).
+            uj_eredmeny = if_(jatekos_aki_lepett == 'X', 1, -1)
+
+        kovetkezo_jatekos = if_(jatekos_aki_lepett == 'X', 'O', 'X')
+
+        return Struct(kovetkezik=kovetkezo_jatekos,
+                      pozicio=uj_pozicio,
+                      N=allapot.N,
+                      cel=allapot.cel,
+                      eredmeny=uj_eredmeny)
 
     def hasznossag(self, allapot, jatekos):
-        """X értékelése: 1, ha nyer; -1, ha veszít, 0 döntetlenért."""
+        """A játékos számára ekkora haszna volt (nyereség/veszteség)."""
+        # allapot.eredmeny: 1, ha X nyert; -1, ha O nyert; 0, ha döntetlen vagy folyamatban.
+        # Ha a 'jatekos' X: hasznosság = allapot.eredmeny
+        # Ha a 'jatekos' O: hasznosság = -allapot.eredmeny
+        if allapot.eredmeny == 0: # Játék nem ért véget nyeréssel/veszteséggel, vagy N=1
+            return 0
         return if_(jatekos == "X", allapot.eredmeny, -allapot.eredmeny)
 
-    def levele(self, allapot):
-        """A nyert állás vagy a tele tábla a játék végét jelenti."""
-        return allapot.eredmeny != 0 or len(allapot.lepesek) == 0
+    # levele(self, allapot)
+    # Az alap Jatek osztály levele metódusa megfelelő: return not self.legalis_lepesek(allapot)
+    # Ha a királynő a célban van, legalis_lepesek() üres listát ad, így levele() igaz lesz.
+
+    # kovetkezik(self, allapot)
+    # Az alap Jatek osztály kovetkezik metódusa megfelelő (allapot.kovetkezik alapján).
 
     def kiir(self, allapot):
-        """Lássuk az aktuális állást."""
-        tabla = allapot.tabla
-        for x in range(1, self.h+1):
-            for y in range(1, self.v+1):
-                print(tabla.get((x, y), '.'), end=" ")
-            print()
-        print(allapot.eredmeny)
-        print()
-
-    def ertekel(self, tabla, lepes, jatekos):
-        """Ha X nyer ezzel a lépéssel, akkor 1, ha O, akkor -1, különben 0."""
-        if (self.k_egy_sorban(tabla, lepes, jatekos, (0, 1)) or
-                self.k_egy_sorban(tabla, lepes, jatekos, (1, 0)) or
-                self.k_egy_sorban(tabla, lepes, jatekos, (1, -1)) or
-                self.k_egy_sorban(tabla, lepes, jatekos, (1, 1))):
-            return if_(jatekos == 'X', +1, -1)
-        else:
-            return 0
-
-    def k_egy_sorban(self, tabla, lepes, jatekos, irany):
-        """Igaz, ha van a lépéstől adott irányba k azonos figura."""
-        delta_x, delta_y = irany
-        x, y = lepes
-        n = 0
-        while tabla.get((x, y)) == jatekos:
-            n += 1
-            x, y = x + delta_x, y + delta_y
-        x, y = lepes
-        while tabla.get((x, y)) == jatekos:
-            n += 1
-            x, y = x - delta_x, y - delta_y
-        n -= 1   # lépés duplán számolva
-        return n >= self.k
+        """Az állás megmutatása a konzolon."""
+        N = allapot.N
+        print(f"\nKövetkező játékos: {allapot.kovetkezik}")
+        print(f"Királynő pozíciója: {allapot.pozicio}")
+        # print(f"Cél pozíció: {allapot.cel}")
+        # print(f"Tábla mérete: {N}x{N}")
+        print("Tábla:")
+        for r_idx in range(1, N + 1):
+            sor_str = []
+            for c_idx in range(1, N + 1):
+                aktualis_cella = (r_idx, c_idx)
+                if aktualis_cella == allapot.pozicio:
+                    sor_str.append('Q')
+                elif aktualis_cella == allapot.cel:
+                    sor_str.append('C') # Cél megjelölése
+                else:
+                    sor_str.append('.')
+            print(" ".join(sor_str))
+        
+        if allapot.eredmeny != 0:
+            gyoztes = 'X' if allapot.eredmeny == 1 else 'O'
+            print(f"Játék vége! Győztes: {gyoztes}")
+        elif not self.legalis_lepesek(allapot) and allapot.pozicio != allapot.cel:
+             print("Játék vége! Nincs több legális lépés, de a cél nem elérve (döntetlen).")
+        elif not self.legalis_lepesek(allapot) and allapot.pozicio == allapot.cel and allapot.eredmeny == 0:
+             # Ez az N=1 eset, ahol a start == cel
+             print("Játék vége! A királynő a célpozíción indul (döntetlen).")
+        print("-" * (2 * N))
 
 def ttt():
     tto = TicTacToe()
@@ -461,7 +592,12 @@ def lovas():
     lovas = Lovas()
     jatssz(lovas, alfabeta_jatekos, random_jatekos)
 
+def bal_kiralyno():
+    bal_kiralyno = BalKiralyno(8)
+    jatssz(bal_kiralyno, random_jatekos, random_jatekos)
+
 if __name__ == '__main__':
+    # ttt()
+    kavics()
     lovas()
-    # kavics()
-    pass
+    bal_kiralyno()
